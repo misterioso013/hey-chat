@@ -1,21 +1,28 @@
-const express = require('express');
-const path = require('path');
+import express from 'express';
+import path from 'path';
+import http from 'http';
+import { Server} from 'socket.io';
+import ejs from 'ejs';
 
+type Message = {
+    author: string;
+    message: string;
+}
 
 const app = express();
-const server = require('http').createServer(app);
-const io =  require('socket.io')(server);
+const server = http.createServer(app);
+const io =  new Server(server);
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.set('views',path.join(__dirname, 'public'));
-app.engine('html', require('ejs').renderFile);
+app.use(express.static(path.join(__dirname, '../public')));
+app.set('views',path.join(__dirname, '../public'));
+app.engine('html', ejs.renderFile);
 app.set('view engine', 'html');
 
 app.use('/', (req, res) => {
     res.render('index.html');
 
 })
-let messages = [];
+let messages = [] as Message[];
 io.on('connection', socket =>{
     console.log(`${socket.id} conectado!`)
 
@@ -24,6 +31,7 @@ io.on('connection', socket =>{
     socket.on('sendMessage', data => {
         
         messages.push(data);
+        console.log(data);
     socket.broadcast.emit('receivedMessage', data);
         if(messages.length >= 30) {
             messages.shift();
@@ -31,4 +39,6 @@ io.on('connection', socket =>{
         }
     })
 })
+
+
 server.listen(3000);
